@@ -12,49 +12,91 @@ CMPE 230 PROJECT-1
 
  */
 
-import java.util.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.border.EtchedBorder;
+
+import org.omg.CORBA.ORB;
 
 public class MainCompiler
 	{
+	// first of all
+		// $x = not($y)
+		// i define in my code
+		// Variable -> "$x"
+		// Operations -> "="
+		// Expression -> "not($y)
 
+		
+		public static String newline = System.getProperty("line.separator"); // for \n																																					// "\n"
 		public static BufferedReader in;
 		public static BufferedWriter out;
 		public static final String ERR = "ERROR";
+
 		public static List<String> lineLIST, variableLIST, expressionLIST,
-				SettedVariableList, OtherVariableList;
-		public static String[] variablesList, expressionList, variableUnique;
+				SettedVariableList, OtherVariableList, variableUniqueList;
+
+		public static String[] variablesList, expressionList;
+		boolean errorOccured = false;
 
 		public static void main(String[] args) throws IOException
 			{
+				
 
-				// The name of the file to open.
+				if (!args[0].matches("(.*)\\.bc"))
+					{
+						// Only accepts files with .my extension
+						out.write("ERROR  : file extention must be -> *.bc  ");
+						return;
+					}
+				String name;
+
+				name = args[0].replace(".bc", ".asm");
+
+				// define some variables
 				lineLIST = new ArrayList<String>();
 				SettedVariableList = new ArrayList<String>();
 				OtherVariableList = new ArrayList<String>();
+				variableUniqueList = new ArrayList<String>();
 
 				variablesList = new String[100];
 				expressionList = new String[100];
-				variableUnique = new String[100];
 
-				String fileName = "C:\\Users\\RamazanArslan\\Desktop\\example.txt";
+				ReadTxt(args[0]);// Read file line by line from arg[0]
 
-				ReadTxt(fileName);
+				out = new BufferedWriter(new FileWriter(name)); // creating an output
 
-				for (int i = 0; i < lineLIST.size(); i++)
-					{
-						defineVariables(i);
-						System.out.println("DDD: " + SettedVariableList.get(i));
-					}
 				Output();
-				// WriteTxt(fileName);
+				out.close();
 
 			}
 
-		public static void defineVariables(int counter)
+		public static void findAllVariablesToDefineInTheEnd() throws IOException
+			{
+				// This func created to define variable in the end of the assembly code
+				// for example vx dw 0
+				for (int i = 0; i < variableUniqueList.size(); i++)
+					{
+						out.write("v" + variableUniqueList.get(i) + " dw 0" + newline);
+
+					}
+			}
+
+		public static void defineVariables(int counter) throws IOException
 			{
 
-				String letters = "abcdefghijklmnopqrstuvwxyz_";
+				// Check unique variable to define end
+
+				String letters = "abcdefghijklmnopqrstuvwxyz_"; // after $, these
+																												// letters must come
 				boolean varStarted = false;
 				boolean equalFound = false;
 				String ch = "";
@@ -84,22 +126,16 @@ public class MainCompiler
 											{
 												if (equalFound)
 													{
-														if (!OtherVariableList
-																.contains(var)
-																&& !SettedVariableList
-																		.contains(var))
+														if (!OtherVariableList.contains(var)
+																&& !SettedVariableList.contains(var))
 															{
-																OtherVariableList
-																		.add(var);
+																OtherVariableList.add(var);
 															}
 													}
-												else if (!OtherVariableList
-														.contains(var)
-														&& !SettedVariableList
-																.contains(var))
+												else if (!OtherVariableList.contains(var)
+														&& !SettedVariableList.contains(var))
 													{
-														SettedVariableList
-																.add(var);
+														SettedVariableList.add(var);
 													}
 											}
 									}
@@ -111,19 +147,14 @@ public class MainCompiler
 									{
 										if (equalFound)
 											{
-												if (!OtherVariableList
-														.contains(var)
-														&& !SettedVariableList
-																.contains(var))
+												if (!OtherVariableList.contains(var)
+														&& !SettedVariableList.contains(var))
 													{
-														OtherVariableList
-																.add(var);
+														OtherVariableList.add(var);
 													}
 											}
-										else if (!OtherVariableList
-												.contains(var)
-												&& !SettedVariableList
-														.contains(var))
+										else if (!OtherVariableList.contains(var)
+												&& !SettedVariableList.contains(var))
 											{
 												SettedVariableList.add(var);
 											}
@@ -138,37 +169,39 @@ public class MainCompiler
 
 			}
 
-		public static void Output()
+		public static void Output() throws IOException
 			{
-				System.out.println("\n" + "code segment");
+
+				out.write("code segment" + newline);
 
 				for (int counter = 0; counter < lineLIST.size(); counter++)
 					{
 
-						System.out.println("\n" + ";;;;"
-								+ lineLIST.get(counter));
+						out.write(";;;;" + lineLIST.get(counter) + newline);
 
 						func_LineSplit(counter, lineLIST.get(counter));
 
-						System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-								+ "mov [bx],ax");
+						out.write("pop ax" + newline + "pop bx" + newline + "mov [bx],ax"
+								+ newline);
 					}
-				System.out.println("int 20h");
-				System.out.println("code ends" + "\n");
+				out.write("int 20h ;;exits to operating system" + newline);
+				findAllVariablesToDefineInTheEnd();
+
+				out.write("code ends");
+
 			}
 
-		public static void ReadTxt(String fileName)
+		public static void ReadTxt(String argument) throws IOException
 			{
 
 				try
 					{
-						FileReader reader = new FileReader(fileName);
-						BufferedReader bufferedReader = new BufferedReader(
-								reader);
+						FileReader reader = new FileReader(argument);
+						BufferedReader in = new BufferedReader(reader);
 
 						String lineinput;
 
-						while ((lineinput = bufferedReader.readLine()) != null)
+						while ((lineinput = in.readLine()) != null)
 							{
 								lineLIST.add(lineinput);
 
@@ -183,246 +216,502 @@ public class MainCompiler
 
 			}
 
-		public static void ExpressionControl(int counter,
-				String expressionString, boolean IsIncludeDoubleExp)
+		public static void ExpressionControl(int counter, String expressionString,
+				boolean IsIncludeDoubleExp) throws IOException
 			{
-
 				expressionString = expressionString.trim();
-				if (expressionString.startsWith("not"))
+				// check not(a) -> one expression ls(a,b) -> double expression
+				if (!IsIncludeDoubleExp)
 					{
-						func_NOT(counter, expressionString);
+						expressionString = parenthesisControl(expressionString);
 					}
-				else if (expressionString.startsWith("xor"))
-					{
-						func_XOR(counter, expressionString);
-					}
-				else if (expressionString.startsWith("ls"))
-					{
-						func_LS(counter, expressionString);
+				boolean isError = false;
+				boolean isCOMMA = false;
+				int indexofCOMMA = -1;
 
-					}
-				else if (expressionString.startsWith("rs"))
+				// these method control comma
+				if (IsIncludeDoubleExp)
 					{
-						func_RS(counter, expressionString);
-					}
-				else if (expressionString.startsWith("lr"))
-					{
-						func_LR(counter, expressionString);
-					}
-				else if (expressionString.startsWith("rr"))
-					{
-						func_RR(counter, expressionString);
+						int a = 0;
+						int expOpenedBracketCount = 0;
+						int expClosedBracketCount = 0;
+						while (a < expressionString.length())
+							{
 
+								if (expressionString.charAt(a) == '(')
+									{
+										expOpenedBracketCount++;
+
+									}
+								if (expressionString.charAt(a) == ')')
+									{
+										expClosedBracketCount--;
+									}
+
+								// syntax of Parenthesis control
+								if (expOpenedBracketCount + expClosedBracketCount == 0)
+									{
+
+										if (expressionString.charAt(a) == ',')
+											{
+												if (expressionString.charAt(a - 1) == ',')
+													{
+														isError = true;
+														break;
+
+													}
+
+												else if (expressionString.charAt(a) == ',')
+													{
+														isCOMMA = true;
+														indexofCOMMA = a;
+														break;
+													}
+											}
+									}
+								else if (expOpenedBracketCount + expClosedBracketCount == 0)
+									{
+
+									}
+
+								a++;
+
+							}
+					}
+
+				// Check expression have " AND" and "OR"
+				int indexofAND_OR = -1;
+				boolean isOR = false;
+				boolean isAND = false;
+				int i = 0;
+				int expOpenedBracketCount = 0;
+				int expClosedBracketCount = 0;
+
+				while (i < expressionString.length())
+					{
+						// Counting All Parenthesis
+
+						if (expressionString.charAt(i) == '(')
+							{
+								expOpenedBracketCount++;
+
+							}
+						if (expressionString.charAt(i) == ')')
+							{
+								expClosedBracketCount--;
+							}
+
+						if (expOpenedBracketCount + expClosedBracketCount == 0)
+							{
+
+								if (expressionString.charAt(i) == '|'
+										|| expressionString.charAt(i) == '&')
+									{
+										if (expressionString.charAt(i - 1) == '|'
+												|| expressionString.charAt(i - 1) == '&')
+											{
+												isError = true;
+
+											}
+										else if (expressionString.charAt(i) == '|')
+											{
+												isOR = true;
+												indexofAND_OR = i;
+												break;
+											}
+										else if (expressionString.charAt(i) == '&')
+											{
+												isAND = true;
+												indexofAND_OR = i;
+												break;
+											}
+									}
+							}
+
+						i++;
+					}
+
+				if (isError)
+					{
+						out.write("Syntax error about AND OR");
 					}
 				else
 					{
-
-						if (Character.isDigit(expressionString.charAt(0)))
+						if (isOR)
 							{
-								func_StartWithOnly_DIGIT(expressionString);
+								// invoke OR function
+								func_OR(counter, expressionString, indexofAND_OR);
+
+							}
+						else if (isAND)
+							{
+								// invoke AND function
+
+								func_AND(counter, expressionString, indexofAND_OR);
+
+							}
+						else if (isCOMMA)
+							{
+								// invoke COMMA function
+
+								func_COMMA(counter, expressionString, indexofCOMMA);
+
+							}
+
+						else if (expressionString.startsWith("not"))
+							{
+								// invoke NOT function
+
+								func_NOT(counter, expressionString);
+							}
+						else if (expressionString.startsWith("xor"))
+							{
+								// invoke XOR function
+
+								func_XOR(counter, expressionString);
+							}
+						else if (expressionString.startsWith("ls"))
+							{
+								// invoke Ls function
+
+								func_LS(counter, expressionString);
+
+							}
+						else if (expressionString.startsWith("rs"))
+							{
+								// invoke RS function
+
+								func_RS(counter, expressionString);
+							}
+						else if (expressionString.startsWith("lr"))
+							{
+								// invoke LR function
+
+								func_LR(counter, expressionString);
+							}
+						else if (expressionString.startsWith("rr"))
+							{
+								// invoke RR function
+
+								func_RR(counter, expressionString);
 
 							}
 						else
 							{
+								// check expression start with number
 
-								if (expressionString.indexOf(0) == '(')
+								if (Character.isDigit(expressionString.charAt(0)))
 									{
-										ExpressionControl(
-												counter,
-												parenthesisControl(expressionString),
-												false);
+										func_StartWithOnly_DIGIT(expressionString);
+
 									}
 								else
 									{
+										// check expression start with $
 
-										if (expressionString.indexOf('|') != -1)
+										if (expressionString.charAt(0) == '$')
 											{
-
-												func_OR(counter,
-														expressionString);
-
-											}
-										else if (expressionString.indexOf('&') != -1)
-											{
-
-												func_AND(counter,
-														expressionString);
-											}
-
-										else if (expressionString.indexOf(',') != -1)
-											{
-												func_COMMA(counter,
-														expressionString);
-
+												func_DOLLAR(expressionString);
 											}
 										else
 											{
-												if (expressionString.charAt(0) == '$')
-													{
-														func_DOLLAR(expressionString);
-													}
-												else
-													{
+												// check expression start with Charecter forEx: abcd
 
-														func_CH(counter,
-																expressionString);
+												func_CH(counter, expressionString);
 
-													}
 											}
 
 									}
 
 							}
+					}
+
+			}
+
+		public static void func_LineSplit(int counter, String line)
+				throws IOException
+			{
+
+				// split if line has "EQUAL" or not
+				if (line.indexOf('=') == -1)
+					{
+						// if line do not contains EQUAL
+						String variableString = "push offset v" + line.substring(1);
+						if (!variableUniqueList.contains(line.substring(1)))
+							{
+								variableUniqueList.add(line.substring(1));
+							}
+						out.write(variableString + newline);
+
+					}
+
+				else
+					{
+						// if line contains EQUAL
+
+						String[] split = line.split("=");
+						variablesList[counter] = split[0].trim();
+						if (!variableUniqueList.contains(variablesList[counter]
+								.substring(1)))
+							{
+								variableUniqueList.add(variablesList[counter].substring(1));
+							}
+						variablesList[counter] = "push offset v"
+								+ variablesList[counter].substring(1);
+						out.write(variablesList[counter] + newline);
+
+						expressionList[counter] = split[1];
+
+						// send expression control
+						ExpressionControl(counter, expressionList[counter], false);
 
 					}
 
 			}
 
 		private static void func_CH(int counter, String expressionString)
+				throws IOException
 			{
-				System.out.println("push 0" + expressionString + "h");
+				// convert to hexamal for character
+				out.write("push 0" + expressionString + "h" + newline);
 			}
 
-		private static void func_DOLLAR(String expressionString)
+		private static void func_DOLLAR(String expressionString) throws IOException
 			{
-				System.out.println("push w v" + expressionString.substring(1));
+				// DOLLAR control
+
+				if (!variableUniqueList.contains(expressionString.substring(1))) // for
+																																					// define
+																																					// variables
+																																					// in
+																																					// the
+																																					// end
+					{
+						variableUniqueList.add(expressionString.substring(1));
+					}
+				if (expressionString.contains("(") || expressionString.contains(")"))
+					{
+						out.write("ERROR about Variables" + expressionString.substring(1)
+								+ newline);
+					}
+				else
+					{
+						out.write("push w v" + expressionString.substring(1) + newline);
+					}
+
 			}
 
-		private static void func_COMMA(int counter, String expressionString)
+		private static void func_COMMA(int counter, String expressionString,
+				int indexComma) throws IOException
 			{
-				String[] tokens = expressionString.split(",");
-				ExpressionControl(counter, tokens[0], false);
-				ExpressionControl(counter, tokens[1], false);
+
+				String strings1 = expressionString.substring(0, indexComma);
+				String strings2 = expressionString.substring(indexComma + 1);
+				strings1 = strings1.trim();
+				strings2 = strings2.trim();
+				ExpressionControl(counter, strings1, false);
+				ExpressionControl(counter, strings2, false);
+
 			}
 
-		private static void func_AND(int counter, String expressionString)
+		private static void func_AND(int counter, String expressionString,
+				int indexOR) throws IOException
 			{
+				String strings1 = expressionString.substring(0, indexOR - 1);
+				String strings2 = expressionString.substring(indexOR + 1);
+				strings1 = strings1.trim();
+				strings2 = strings2.trim();
+				ExpressionControl(counter, strings1, false);
+				ExpressionControl(counter, strings2, false);
 
-				String[] tokens = expressionString.split("&");
-				ExpressionControl(counter, tokens[0], false);
-				ExpressionControl(counter, tokens[1], false);
-
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "and ax,bx" + "\n" + "push ax");
+				out.write("pop ax" + newline + "pop bx" + newline + "and ax,bx"
+						+ newline + "push ax" + newline);
 			}
 
-		private static void func_OR(int counter, String expressionString)
+		private static void func_OR(int counter, String expressionString,
+				int indexOR) throws IOException
 			{
+				String strings1 = expressionString.substring(0, indexOR);
+				String strings2 = expressionString.substring(indexOR + 1);
+				strings1 = strings1.trim();
+				strings2 = strings2.trim();
 
-				String[] tokens = expressionString.split("\\|");
+				ExpressionControl(counter, strings1, false);
+				ExpressionControl(counter, strings2, false);
 
-				ExpressionControl(counter, tokens[0], false);
-				ExpressionControl(counter, tokens[1], false);
-
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "or ax,bx" + "\n" + "push ax");
+				out.write("pop ax" + newline + "pop bx" + newline + "or ax,bx"
+						+ newline + "push ax" + newline);
 			}
 
 		private static void func_StartWithOnly_DIGIT(String expressionString)
+				throws IOException
 			{
 				expressionString = "push " + expressionString + "h";
 
-				System.out.println(expressionString);
+				out.write(expressionString + newline);
 			}
 
 		private static void func_XOR(int counter, String expressionString)
+				throws IOException
 			{
 
-				ExpressionControl(counter,
-						parenthesisControl(expressionString), true);
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "xor ax,bx" + "\n" + "push ax");
+				ExpressionControl(counter, parenthesisExtract(expressionString), true);
+				out.write("pop ax" + newline + "pop bx" + newline + "xor ax,bx"
+						+ newline + "push ax" + newline);
 
 			}
 
 		private static void func_LS(int counter, String expressionString)
+				throws IOException
 			{
 
-				ExpressionControl(counter,
-						parenthesisControl(expressionString), true);
+				ExpressionControl(counter, parenthesisExtract(expressionString), true);
 
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "shl ax,bx" + "\n" + "push ax");
+				out.write("pop ax" + newline + "pop bx" + newline + "shl ax,bx"
+						+ newline + "push ax" + newline);
 
 			}
 
 		private static void func_RS(int counter, String expressionString)
+				throws IOException
 			{
 
-				ExpressionControl(counter,
-						parenthesisControl(expressionString), true);
+				ExpressionControl(counter, parenthesisExtract(expressionString), true);
 
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "shr ax,bx" + "\n" + "push ax");
+				out.write("pop ax" + newline + "pop bx" + newline + "shr ax,bx"
+						+ newline + "push ax" + newline);
 
 			}
 
 		private static void func_RR(int counter, String expressionString)
+				throws IOException
 			{
 
-				ExpressionControl(counter,
-						parenthesisControl(expressionString), true);
+				ExpressionControl(counter, parenthesisExtract(expressionString), true);
 
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "shr ax,bx" + "\n" + "push ax");
-
-			}
-
-		public static void func_LineSplit(int counter, String line)
-			{
-
-				if (line.indexOf('=') == -1)
-					{
-						String variableString = "push offset v"
-								+ line.substring(1);
-
-						System.out.println(variableString);
-
-					}
-
-				else
-					{
-
-						String[] split = line.split("=");
-						variablesList[counter] = split[0];
-
-						variablesList[counter] = "push offset v"
-								+ variablesList[counter].substring(1);
-						System.out.println(variablesList[counter]);
-
-						expressionList[counter] = split[1];
-
-						ExpressionControl(counter, expressionList[counter],
-								false);
-
-					}
+				out.write("pop ax" + newline + "pop bx" + newline + "shr ax,bx"
+						+ newline + "push ax" + newline);
 
 			}
 
 		private static void func_LR(int counter, String expressionString)
+				throws IOException
 			{
 
-				ExpressionControl(counter,
-						parenthesisControl(expressionString), true);
+				ExpressionControl(counter, parenthesisExtract(expressionString), true);
 
-				System.out.println("pop ax" + "\n" + "pop bx" + "\n"
-						+ "shr ax,bx" + "\n" + "push ax");
+				out.write("pop ax" + newline + "pop bx" + newline + "shr ax,bx"
+						+ newline + "push ax" + newline);
 
 			}
 
 		private static void func_NOT(int counter, String expressionString)
+				throws IOException
 			{
 
-				ExpressionControl(counter,
-						parenthesisControl(expressionString), false);
+				ExpressionControl(counter, parenthesisExtract(expressionString), false);
 
-				System.out.println("pop ax" + "\n" + "not ax" + "\n"
-						+ "push ax");
+				out.write("pop ax" + newline + "not ax" + newline + "push ax" + newline);
 
 			}
 
 		private static String parenthesisControl(String expressionString)
+				throws IOException
 			{
+				// this method controls expression has equal opened bracket'(' and has
+				// closed bracket ')
+
+				int i = 0;
+				int expOpenedBracketCount = 0;
+				int expClosedBracketCount = 0;
+				int expOpenedBracketFirstIndex = -1;
+				int expClosedBracketLastIndex = 0;
+
+				while (i < expressionString.length())
+					{
+						if (expressionString.charAt(i) == '(')
+							{
+								expOpenedBracketCount++;
+
+								if (expOpenedBracketFirstIndex == -1)
+									{
+										expOpenedBracketFirstIndex = i;
+									}
+
+							}
+						if (expressionString.charAt(i) == ')')
+							{
+								expClosedBracketLastIndex = i;
+								expClosedBracketCount--;
+							}
+
+						i++;
+					}
+
+				if (expOpenedBracketCount + expClosedBracketCount == 0)
+					{
+						int a = 0;
+						boolean isClosedOccured = false;
+						boolean isError = false;
+						while (a < expressionString.length())
+							{
+
+								if (isClosedOccured)
+									{
+										if (!(expressionString.charAt(a) == ' '
+												|| expressionString.charAt(a) == ')'
+												|| expressionString.charAt(a) == '|'
+												|| expressionString.charAt(a) == '&' || expressionString
+													.charAt(a) == ','))
+											{
+												isError = true;
+												break;
+											}
+										else
+											{
+												isClosedOccured = false;
+											}
+
+									}
+								if (expressionString.charAt(a) == ')')
+									{
+										isClosedOccured = true;
+									}
+
+								a++;
+							}
+						if (isError)
+							{
+								return "ERROR";
+							}
+						if (expOpenedBracketFirstIndex == 0
+								&& expClosedBracketLastIndex == expressionString.length() - 1)
+							{
+								String answer = expressionString.substring(
+										expOpenedBracketFirstIndex + 1, expClosedBracketLastIndex);
+
+								return answer;
+
+							}
+						else
+							return expressionString;
+
+					}
+				else
+					{
+						out.write("syntax error: Parenthesis" + newline);
+
+						return ERR;
+					}
+
+			}
+
+		private static String parenthesisExtract(String expressionString)
+				throws IOException
+			{
+
+				// if expression come like this "(abcd)" or "(not(abcd))
+				// these method extract parenthesis
 				int i = 0;
 				int expOpenedBracketCount = 0;
 				int expClosedBracketCount = 0;
@@ -452,38 +741,33 @@ public class MainCompiler
 				if (expOpenedBracketCount + expClosedBracketCount == 0)
 					{
 
-						String answer = expressionString.substring(
-								expOpenedBracketFirstIndex + 1,
-								expClosedBracketLastIndex);
-						return answer;
+						if (expOpenedBracketFirstIndex == 0
+								&& expClosedBracketLastIndex == expressionString.length() - 1)
+							{
+								String answer = expressionString.substring(
+										expOpenedBracketFirstIndex + 1, expClosedBracketLastIndex);
+
+								return answer;
+
+							}
+
+						else if (expOpenedBracketFirstIndex != 0)
+							{
+								String answer = expressionString.substring(
+										expOpenedBracketFirstIndex + 1, expClosedBracketLastIndex);
+								return answer;
+
+							}
+						return expressionString;
 
 					}
 				else
 					{
-						System.out.println("syntax error: Parenthesis");
+						out.write("syntax error: Parenthesis" + newline);
 
 						return ERR;
 					}
 
-			}
-
-		public static void WriteTxt(String fileName)
-			{
-				try
-					{
-						FileWriter writer = new FileWriter(fileName, false);
-						BufferedWriter bufferedWriter = new BufferedWriter(
-								writer);
-						bufferedWriter.write("Hello World");
-						bufferedWriter.newLine();
-						bufferedWriter.write("Hello semih");
-
-						bufferedWriter.close();
-					}
-				catch (IOException e)
-					{
-						e.printStackTrace();
-					}
 			}
 
 	}
