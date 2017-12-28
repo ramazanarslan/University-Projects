@@ -1,4 +1,4 @@
-# My University Projects
+# University Projects
 Programming projects that I have written at Boğaziçi University
 
 ### [CmpE 230 - Systems Programming](/CMPE%20230)
