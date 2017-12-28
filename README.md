@@ -11,4 +11,10 @@ My Programming Projects - Boğaziçi University
 - [Project 3](/CMPE%20230/Homework%20-1%20JAVA/BITC) `QT` `C++`  - A QT Program That Implements A Currency Converter (from API )
 
 ### [CmpE 322 - Operation System](/CMPE%20230)
+- [Project 1](/CMPE%20230/Homework%20-1%20JAVA/BITC) `C++` - OS Scheduler Implementation
 
+### [CmpE 322 - Operation System](/CMPE%20230)
+- [Project 2](/CMPE%20230/Homework%20-1%20JAVA/BITC) `C++` - OS Synchronization Implementation
+
+### [CmpE 322 - Operation System](/CMPE%20230)
+- [Project 3](/CMPE%20230/Homework%20-1%20JAVA/BITC) `C++` - Implementation of I/O Based Operations
